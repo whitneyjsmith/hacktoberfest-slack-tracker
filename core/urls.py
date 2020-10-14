@@ -16,10 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from github_checker.views import RegisteredUsersViewset
+from github_checker.views import RegisteredUsersViewset, SlackViewset
 
 router = routers.DefaultRouter()
 router.register(r'registeredusers', RegisteredUsersViewset)
+router.register(r'slackbot', SlackViewset)
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),

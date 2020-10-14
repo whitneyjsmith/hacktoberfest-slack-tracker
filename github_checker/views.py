@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets, mixins
 from .models import (UserConfig, GithubUserConfig, NotificationSetting,
                      SlackOrg, ConnectionUserConfig, UserConfig)
-from .serializers import UserConfigSerializer
+from .serializers import UserConfigSerializer, SlackSerializer
 from .tasks import get_user_github, check_user_and_update
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -11,6 +11,25 @@ import requests
 
 
 # Create your views here.
+
+class SlackViewset(viewsets.ModelViewSet):
+
+    queryset = SlackOrg.objects.all()
+    serializer_class = SlackSerializer
+
+    @action(detail=False, methods=['post'], url_path="interact")
+    @csrf_exempt
+    def interact(self, request):
+        print("Interact called!")
+        print(request)
+        print(request.POST)
+
+    @action(detail=False, methods=['post'], url_path="oauth")
+    @csrf_exempt
+    def oauth(self, request):
+        print("Oauth called!")
+        print(request)
+        print(request.POST)
 
 
 class RegisteredUsersViewset(viewsets.ModelViewSet):
