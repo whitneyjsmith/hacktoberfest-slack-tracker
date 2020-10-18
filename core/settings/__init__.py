@@ -13,9 +13,10 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 from pathlib import Path
 import os
 
+# If a local settings file exists, use it, else load production settings
 try:
     from .local import *
-except ImportError:
+except ModuleNotFoundError:
     print("Loading Production Environment!")
     from .production import *
 
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'user',
     'github_checker'
 ]

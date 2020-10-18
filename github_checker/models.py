@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 import requests
 from django.conf import settings
+import importlib
 
 # Create your models here.
 
@@ -62,6 +63,7 @@ class UserConfig(models.Model):
     notify_count_in_slack = models.BooleanField(default=False)
     github_user = models.ForeignKey(GithubUserConfig, on_delete=models.CASCADE)
     conn_configs = models.ManyToManyField(ConnectionUserConfig)
+    client = models.CharField(default="hacktoberfestchecker", max_length=255)
 
     class Meta:
         unique_together = ('name', 'github_user',)
@@ -70,38 +72,17 @@ class UserConfig(models.Model):
         return self.name
 
     def get_pull_requests_created(self, start_date=None, end_date=None):
-        base_url = "https://api.github.com/search/issues"
-        qualifiers = {"author": self.github_user.username,
-                      "type": "pr"}
-        q_string = "+".join([f"{key}:{value}" for key, value in qualifiers.items()])
-        if start_date and not end_date:
-            q_string = q_string+f"+created:>={start_date.date()}"
-        if end_date and not start_date:
-            q_string = q_string+f"+created:<={end_date.date()}"
-        if start_date and end_date:
-            q_string = q_string+f"+created:{start_date.date()}..{end_date.date()}"
-        auth = (settings.GITHUB_AUTH.get("username"),
-                settings.GITHUB_AUTH.get("token"))
-        if self.github_user.auth_token:
-            auth = (self.github_user.username, self.github_user.auth_token)
-        print(f"{base_url}?q={q_string}")
-        print(auth)
-        resp = requests.get(f"{base_url}?q={q_string}", auth=auth)
-        print(resp.json())
-        resp_json = resp.json()
+        client = importlib.import_module(f"github_checker.clients.{self.client}")
+        valid_prs = client.Client.get_pull_requests(self,
+                                                    start_date=start_date,
+                                                    end_date=end_date)
         pr_records = []
         new_records = []
-        for pr in resp_json.get("items"):
-            fields = {"repo": pr.get("repository_url"),
-                      "state": pr.get("state"),
-                      "created_at": pr.get("created_at"),
-                      "closed_at": pr.get("closed_at"),
-                      "body": pr.get("body"),
-                      "title": pr.get("title"),
-                      "owner": self}
+        for pr in valid_prs:
+            url = pr.pop("url")
             pr_record, created = PullRequest.objects.get_or_create(
-                                                          pull_id=pr["id"],
-                                                          defaults=fields)
+                                                          url=url,
+                                                          defaults=pr)
             pr_records.append(pr_record)
             if created:
                 new_records.append(pr_record)
@@ -111,13 +92,17 @@ class UserConfig(models.Model):
 
 class PullRequest(models.Model):
     repo = models.CharField(blank=True, max_length=255)
-    pull_id = models.IntegerField(unique=True)
+    url = models.CharField(max_length=255)
+    pull_id = models.IntegerField()
     state = models.CharField(blank=True, max_length=255)
     created_at = models.DateTimeField()
-    closed_at = models.DateTimeField(null=True)
     body = models.CharField(blank=True, null=True, max_length=255)
     title = models.CharField(max_length=255)
     owner = models.ForeignKey(UserConfig, on_delete=models.CASCADE, related_name="pull_requests")
+    has_hacktoberfest_label = models.BooleanField(default=False)
+    repo_has_hacktoberfest_topic = models.BooleanField(default=False)
+    merged = models.BooleanField(default=False)
+    alerted = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
