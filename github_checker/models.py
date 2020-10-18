@@ -30,6 +30,8 @@ class NotificationSetting(models.Model):
     bot_name = models.CharField(max_length=255)
     bot_avatar = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.name
 
 class SlackOrg(models.Model):
     name = models.CharField(max_length=200)
