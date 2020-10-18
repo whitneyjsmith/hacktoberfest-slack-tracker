@@ -41,7 +41,7 @@ def check_user_and_update(user):
                          "user": user,
                          "self": notif_settings,
                          "slack_user": notif,
-                         "num_new_requests": len(prs.get("new_pull_requests"))}
+                         "num_new_requests": len(prs.get("total_pull_requests"))}
             message = notif_settings.message.format(**variables)
             token = notif.slack_org.bot_access_token
             channel = notif_settings.channel
