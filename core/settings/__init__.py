@@ -14,7 +14,7 @@ from pathlib import Path
 import os
 
 try:
-    from .local_template import *
+    from .local import *
 except ImportError:
     print("Loading Production Environment!")
     from .production import *
