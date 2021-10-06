@@ -47,7 +47,7 @@ class RegisteredUsersViewset(viewsets.ModelViewSet):
         resp_url = request.POST.get('response_url')
         text = request.POST.get('text')
         # Grab defaults TODO: allow user to choose this in a slack dialog box
-        notif_settings = NotificationSetting.objects.all()[0]
+        notif_settings = NotificationSetting.objects.all()[-1]
         github_details = get_user_github(text.strip())
         if not github_details:
             return Response(f"Unable to find github user: {text}")  # Respond 200 so slack doesn't report error
